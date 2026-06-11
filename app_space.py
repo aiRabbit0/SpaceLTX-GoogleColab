@@ -551,10 +551,33 @@ OMNINFT_BF16_LORA_FILENAME = "ltx23/LTX-2.3-OmniNFT-RL-Lora_bf16.safetensors"
 MSR_LORA_FILENAME = "ltx23/LTX2.3-Licon-MSR-test_version.safetensors"
 HARDCUT_LORA_FILENAME = "ltx23/2508281_LTX-2.3_Cinematic hardcut.safetensors"
 TRANSITION_LORA_FILENAME = "ltx23/ltx2.3-transition.safetensors"
-# Extra user slot: no original lora and no DOWNLOADS entry. The Colab notebook
-# repoints this constant at a CivitAI lora installed under loras/ltx23/custom/.
-# Safe while both slot7 sliders stay at 0 (the file is never loaded).
-SLOT7_LORA_FILENAME = "ltx23/custom/slot7_placeholder.safetensors"
+# Runtime lora-file selection for the 7 swappable slots. Each slot gets a UI
+# dropdown listing its original file plus every .safetensors installed under
+# loras/ltx23/custom/ (populated externally, e.g. by the Colab notebook before
+# the UI is built). manifest.json there maps filename -> CivitAI metadata for
+# friendlier display names. Slot 7 has no original lora: it defaults to
+# LORA_NONE and only does anything once a custom file is selected.
+LORA_NONE = "(none)"
+
+
+def _slot_lora_choices(original: str | None) -> list:
+    choices = []
+    if original:
+        choices.append((f"original: {pathlib.Path(original).name}", original))
+    custom_dir = MODELS / "loras" / "ltx23" / "custom"
+    manifest: dict = {}
+    manifest_path = custom_dir / "manifest.json"
+    if manifest_path.exists():
+        try:
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        except Exception:
+            manifest = {}
+    if custom_dir.exists():
+        for f in sorted(custom_dir.glob("*.safetensors")):
+            display = (manifest.get(f.name) or {}).get("name") or f.stem
+            choices.append((f"custom: {str(display)[:40]}", f"ltx23/custom/{f.name}"))
+    choices.append((LORA_NONE, LORA_NONE))
+    return choices
 NODE_POWER_LORA = "557"
 
 # Workflow has two sampler passes; MSR conditioning injected at pass-1
@@ -1822,6 +1845,13 @@ def _inject_params(
     hardcut_audio_strength: float = 0.0,
     transition_audio_strength: float = 0.0,
     slot7_audio_strength: float = 0.0,
+    slot1_lora_file: str = HARDCUT_LORA_FILENAME,
+    slot2_lora_file: str = SYNTH_LORA_FILENAME,
+    slot3_lora_file: str = PLORA_LORA_FILENAME,
+    slot4_lora_file: str = OMNINFT_BF16_LORA_FILENAME,
+    slot5_lora_file: str = BETTER_MOTION_LORA_FILENAME,
+    slot6_lora_file: str = PHYSICS_V2_LORA_FILENAME,
+    slot7_lora_file: str = LORA_NONE,
     cache_at_step: int = 0,
     cache_warmup: int = 400,
     energy_threshold: float = 0.3,
@@ -1947,6 +1977,15 @@ def _inject_params(
             "lora_hardcut": hardcut_audio_strength,
             "lora_transition": transition_audio_strength,
             "lora_slot7": slot7_audio_strength,
+        },
+        file_overrides={
+            "lora_hardcut": slot1_lora_file,
+            "lora_synth": slot2_lora_file,
+            "lora_plora": slot3_lora_file,
+            "lora_omninft_bf16": slot4_lora_file,
+            "lora_better_motion": slot5_lora_file,
+            "lora_physics_v2": slot6_lora_file,
+            "lora_slot7": slot7_lora_file,
         },
     )
     workflow[NODE_POSITIVE]["inputs"]["text"] = prompt
@@ -2096,7 +2135,7 @@ OPTIONAL_LORAS = {
     "lora_physics_v2": PHYSICS_V2_LORA_FILENAME,
     "lora_hardcut": HARDCUT_LORA_FILENAME,
     "lora_transition": TRANSITION_LORA_FILENAME,
-    "lora_slot7": SLOT7_LORA_FILENAME,
+    "lora_slot7": LORA_NONE,
 }
 
 
@@ -2104,6 +2143,7 @@ def _inject_optional_loras(
     workflow: dict[str, Any],
     video_strengths: dict[str, float],
     audio_strengths: dict[str, float] | None = None,
+    file_overrides: dict[str, str] | None = None,
 ) -> None:
     """Populate the MultiLoRALoader's lora_data JSON string.
 
@@ -2119,8 +2159,14 @@ def _inject_optional_loras(
     if node is None:
         return
     audio_strengths = audio_strengths or {}
+    file_overrides = file_overrides or {}
     entries: list[dict[str, Any]] = []
     for key, filename in OPTIONAL_LORAS.items():
+        # Per-slot dropdown override: swap the file at runtime, or LORA_NONE
+        # to disable the slot regardless of slider values.
+        filename = file_overrides.get(key) or filename
+        if not filename or filename == LORA_NONE:
+            continue
         vid = float(video_strengths.get(key, 0.0) or 0.0)
         aud = float(audio_strengths.get(key, vid) or 0.0)
         if vid <= 0 and aud <= 0:
@@ -2956,6 +3002,13 @@ def get_gpu_duration(
     hardcut_audio_strength: float = 0.0,
     transition_audio_strength: float = 0.0,
     slot7_audio_strength: float = 0.0,
+    slot1_lora_file: str = HARDCUT_LORA_FILENAME,
+    slot2_lora_file: str = SYNTH_LORA_FILENAME,
+    slot3_lora_file: str = PLORA_LORA_FILENAME,
+    slot4_lora_file: str = OMNINFT_BF16_LORA_FILENAME,
+    slot5_lora_file: str = BETTER_MOTION_LORA_FILENAME,
+    slot6_lora_file: str = PHYSICS_V2_LORA_FILENAME,
+    slot7_lora_file: str = LORA_NONE,
     cache_at_step: int = 0,
     cache_warmup: int = 400,
     energy_threshold: float = 0.3,
@@ -3059,6 +3112,13 @@ def generate(
     hardcut_audio_strength: float = 0.0,
     transition_audio_strength: float = 0.0,
     slot7_audio_strength: float = 0.0,
+    slot1_lora_file: str = HARDCUT_LORA_FILENAME,
+    slot2_lora_file: str = SYNTH_LORA_FILENAME,
+    slot3_lora_file: str = PLORA_LORA_FILENAME,
+    slot4_lora_file: str = OMNINFT_BF16_LORA_FILENAME,
+    slot5_lora_file: str = BETTER_MOTION_LORA_FILENAME,
+    slot6_lora_file: str = PHYSICS_V2_LORA_FILENAME,
+    slot7_lora_file: str = LORA_NONE,
     cache_at_step: int = 0,
     cache_warmup: int = 400,
     energy_threshold: float = 0.3,
@@ -3204,6 +3264,13 @@ def generate(
                 hardcut_audio_strength=hardcut_audio_strength,
                 transition_audio_strength=transition_audio_strength,
                 slot7_audio_strength=slot7_audio_strength,
+                slot1_lora_file=slot1_lora_file,
+                slot2_lora_file=slot2_lora_file,
+                slot3_lora_file=slot3_lora_file,
+                slot4_lora_file=slot4_lora_file,
+                slot5_lora_file=slot5_lora_file,
+                slot6_lora_file=slot6_lora_file,
+                slot7_lora_file=slot7_lora_file,
                 cache_at_step=int(cache_at_step),
                 cache_warmup=int(cache_warmup),
                 energy_threshold=float(energy_threshold),
@@ -3441,9 +3508,19 @@ with gr.Blocks(title="10Eros LTX 2.3 image-to-video") as demo:
                     0.0, 1.0, value=0.0, step=0.05,
                     label="synth lora (0 = off)",
                 )
+                slot2_lora_file = gr.Dropdown(
+                    choices=_slot_lora_choices(SYNTH_LORA_FILENAME),
+                    value=SYNTH_LORA_FILENAME, allow_custom_value=True,
+                    label="slot 2 file (synth slider controls this file)",
+                )
                 plora_lora_strength = gr.Slider(
                     0.0, 1.0, value=0.0, step=0.05,
                     label="plora (0 = off)",
+                )
+                slot3_lora_file = gr.Dropdown(
+                    choices=_slot_lora_choices(PLORA_LORA_FILENAME),
+                    value=PLORA_LORA_FILENAME, allow_custom_value=True,
+                    label="slot 3 file (plora slider controls this file)",
                 )
                 singularity_lora_strength = gr.Slider(
                     0.0, 1.0, value=0.3, step=0.05,
@@ -3457,17 +3534,37 @@ with gr.Blocks(title="10Eros LTX 2.3 image-to-video") as demo:
                     0.0, 2.0, value=0.0, step=0.05,
                     label="omninft RL bf16 / kijai (0 = off)",
                 )
+                slot4_lora_file = gr.Dropdown(
+                    choices=_slot_lora_choices(OMNINFT_BF16_LORA_FILENAME),
+                    value=OMNINFT_BF16_LORA_FILENAME, allow_custom_value=True,
+                    label="slot 4 file (omninft bf16 slider controls this file)",
+                )
                 better_motion_lora_strength = gr.Slider(
                     0.0, 1.0, value=0.0, step=0.05,
                     label="better motion / mistic (0 = off)",
+                )
+                slot5_lora_file = gr.Dropdown(
+                    choices=_slot_lora_choices(BETTER_MOTION_LORA_FILENAME),
+                    value=BETTER_MOTION_LORA_FILENAME, allow_custom_value=True,
+                    label="slot 5 file (better motion slider controls this file)",
                 )
                 physics_v2_lora_strength = gr.Slider(
                     0.0, 1.0, value=0.0, step=0.05,
                     label="physics v2 / mistic (0 = off)",
                 )
+                slot6_lora_file = gr.Dropdown(
+                    choices=_slot_lora_choices(PHYSICS_V2_LORA_FILENAME),
+                    value=PHYSICS_V2_LORA_FILENAME, allow_custom_value=True,
+                    label="slot 6 file (physics v2 slider controls this file)",
+                )
                 hardcut_lora_strength = gr.Slider(
                     0.0, 1.0, value=0.0, step=0.05,
                     label="cinematic hardcut (0 = off)",
+                )
+                slot1_lora_file = gr.Dropdown(
+                    choices=_slot_lora_choices(HARDCUT_LORA_FILENAME),
+                    value=HARDCUT_LORA_FILENAME, allow_custom_value=True,
+                    label="slot 1 file (hardcut slider controls this file)",
                 )
                 transition_lora_strength = gr.Slider(
                     0.0, 1.0, value=0.0, step=0.05,
@@ -3476,6 +3573,11 @@ with gr.Blocks(title="10Eros LTX 2.3 image-to-video") as demo:
                 slot7_lora_strength = gr.Slider(
                     0.0, 1.0, value=0.0, step=0.05,
                     label="slot 7 / custom (0 = off)",
+                )
+                slot7_lora_file = gr.Dropdown(
+                    choices=_slot_lora_choices(None),
+                    value=LORA_NONE, allow_custom_value=True,
+                    label="slot 7 file (extra slot, customs only)",
                 )
             with gr.Accordion("resolution", open=False):
                 with gr.Row():
@@ -3728,6 +3830,13 @@ with gr.Blocks(title="10Eros LTX 2.3 image-to-video") as demo:
             hardcut_audio_strength,
             transition_audio_strength,
             slot7_audio_strength,
+            slot1_lora_file,
+            slot2_lora_file,
+            slot3_lora_file,
+            slot4_lora_file,
+            slot5_lora_file,
+            slot6_lora_file,
+            slot7_lora_file,
             cache_at_step,
             cache_warmup,
             energy_threshold,
