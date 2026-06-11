@@ -551,6 +551,10 @@ OMNINFT_BF16_LORA_FILENAME = "ltx23/LTX-2.3-OmniNFT-RL-Lora_bf16.safetensors"
 MSR_LORA_FILENAME = "ltx23/LTX2.3-Licon-MSR-test_version.safetensors"
 HARDCUT_LORA_FILENAME = "ltx23/2508281_LTX-2.3_Cinematic hardcut.safetensors"
 TRANSITION_LORA_FILENAME = "ltx23/ltx2.3-transition.safetensors"
+# Extra user slot: no original lora and no DOWNLOADS entry. The Colab notebook
+# repoints this constant at a CivitAI lora installed under loras/ltx23/custom/.
+# Safe while both slot7 sliders stay at 0 (the file is never loaded).
+SLOT7_LORA_FILENAME = "ltx23/custom/slot7_placeholder.safetensors"
 NODE_POWER_LORA = "557"
 
 # Workflow has two sampler passes; MSR conditioning injected at pass-1
@@ -1798,6 +1802,7 @@ def _inject_params(
     physics_v2_lora_strength: float = 0.0,
     hardcut_lora_strength: float = 0.0,
     transition_lora_strength: float = 0.15,
+    slot7_lora_strength: float = 0.0,
     sulphur_audio_strength: float = 0.15,
     sulphur_v1_audio_strength: float = 0.15,
     vbvr_audio_strength: float = 0.5,
@@ -1811,6 +1816,7 @@ def _inject_params(
     physics_v2_audio_strength: float = 0.0,
     hardcut_audio_strength: float = 0.0,
     transition_audio_strength: float = 0.0,
+    slot7_audio_strength: float = 0.0,
     cache_at_step: int = 0,
     cache_warmup: int = 400,
     energy_threshold: float = 0.3,
@@ -1919,6 +1925,7 @@ def _inject_params(
             "lora_physics_v2": physics_v2_lora_strength,
             "lora_hardcut": hardcut_lora_strength,
             "lora_transition": transition_lora_strength,
+            "lora_slot7": slot7_lora_strength,
         },
         audio_strengths={
             "lora_sulphur": sulphur_audio_strength,
@@ -1934,6 +1941,7 @@ def _inject_params(
             "lora_physics_v2": physics_v2_audio_strength,
             "lora_hardcut": hardcut_audio_strength,
             "lora_transition": transition_audio_strength,
+            "lora_slot7": slot7_audio_strength,
         },
     )
     workflow[NODE_POSITIVE]["inputs"]["text"] = prompt
@@ -2083,6 +2091,7 @@ OPTIONAL_LORAS = {
     "lora_physics_v2": PHYSICS_V2_LORA_FILENAME,
     "lora_hardcut": HARDCUT_LORA_FILENAME,
     "lora_transition": TRANSITION_LORA_FILENAME,
+    "lora_slot7": SLOT7_LORA_FILENAME,
 }
 
 
@@ -2927,6 +2936,7 @@ def get_gpu_duration(
     physics_v2_lora_strength: float = 0.0,
     hardcut_lora_strength: float = 0.0,
     transition_lora_strength: float = 0.15,
+    slot7_lora_strength: float = 0.0,
     sulphur_audio_strength: float = 0.15,
     sulphur_v1_audio_strength: float = 0.15,
     vbvr_audio_strength: float = 0.5,
@@ -2940,6 +2950,7 @@ def get_gpu_duration(
     physics_v2_audio_strength: float = 0.0,
     hardcut_audio_strength: float = 0.0,
     transition_audio_strength: float = 0.0,
+    slot7_audio_strength: float = 0.0,
     cache_at_step: int = 0,
     cache_warmup: int = 400,
     energy_threshold: float = 0.3,
@@ -3028,6 +3039,7 @@ def generate(
     physics_v2_lora_strength: float = 0.0,
     hardcut_lora_strength: float = 0.0,
     transition_lora_strength: float = 0.15,
+    slot7_lora_strength: float = 0.0,
     sulphur_audio_strength: float = 0.15,
     sulphur_v1_audio_strength: float = 0.15,
     vbvr_audio_strength: float = 0.5,
@@ -3041,6 +3053,7 @@ def generate(
     physics_v2_audio_strength: float = 0.0,
     hardcut_audio_strength: float = 0.0,
     transition_audio_strength: float = 0.0,
+    slot7_audio_strength: float = 0.0,
     cache_at_step: int = 0,
     cache_warmup: int = 400,
     energy_threshold: float = 0.3,
@@ -3171,6 +3184,7 @@ def generate(
                 physics_v2_lora_strength=physics_v2_lora_strength,
                 hardcut_lora_strength=hardcut_lora_strength,
                 transition_lora_strength=transition_lora_strength,
+                slot7_lora_strength=slot7_lora_strength,
                 sulphur_audio_strength=sulphur_audio_strength,
                 sulphur_v1_audio_strength=sulphur_v1_audio_strength,
                 vbvr_audio_strength=vbvr_audio_strength,
@@ -3184,6 +3198,7 @@ def generate(
                 physics_v2_audio_strength=physics_v2_audio_strength,
                 hardcut_audio_strength=hardcut_audio_strength,
                 transition_audio_strength=transition_audio_strength,
+                slot7_audio_strength=slot7_audio_strength,
                 cache_at_step=int(cache_at_step),
                 cache_warmup=int(cache_warmup),
                 energy_threshold=float(energy_threshold),
@@ -3233,6 +3248,7 @@ def generate(
             f"physics_v2={physics_v2_lora_strength:.2f}/{physics_v2_audio_strength:.2f} "
             f"hardcut={hardcut_lora_strength:.2f}/{hardcut_audio_strength:.2f} "
             f"transition={transition_lora_strength:.2f}/{transition_audio_strength:.2f} "
+            f"slot7={slot7_lora_strength:.2f}/{slot7_audio_strength:.2f} "
             f"likeness={likeness_strength:.2f} "
             f"like_anchor={likeness_anchor_strength:.2f} "
             f"lat_anchor={latent_anchor_strength:.2f} "
@@ -3452,6 +3468,10 @@ with gr.Blocks(title="10Eros LTX 2.3 image-to-video") as demo:
                     0.0, 1.0, value=0.0, step=0.05,
                     label="transition lora (0 = off, default 0.15)",
                 )
+                slot7_lora_strength = gr.Slider(
+                    0.0, 1.0, value=0.0, step=0.05,
+                    label="slot 7 / custom (0 = off)",
+                )
             with gr.Accordion("resolution", open=False):
                 with gr.Row():
                     target_mp = gr.Number(
@@ -3596,6 +3616,10 @@ with gr.Blocks(title="10Eros LTX 2.3 image-to-video") as demo:
                         0.0, 1.0, value=0.0, step=0.05,
                         label="transition lora (audio)",
                     )
+                    slot7_audio_strength = gr.Slider(
+                        0.0, 1.0, value=0.0, step=0.05,
+                        label="slot 7 / custom (audio)",
+                    )
             with gr.Accordion("multi-reference settings (MSR)", open=False, visible=False) as msr_settings_acc:
                 msr_frame_count = gr.Dropdown(
                     [17, 25, 33, 41], value=41,
@@ -3684,6 +3708,7 @@ with gr.Blocks(title="10Eros LTX 2.3 image-to-video") as demo:
             physics_v2_lora_strength,
             hardcut_lora_strength,
             transition_lora_strength,
+            slot7_lora_strength,
             sulphur_audio_strength,
             sulphur_v1_audio_strength,
             vbvr_audio_strength,
@@ -3697,6 +3722,7 @@ with gr.Blocks(title="10Eros LTX 2.3 image-to-video") as demo:
             physics_v2_audio_strength,
             hardcut_audio_strength,
             transition_audio_strength,
+            slot7_audio_strength,
             cache_at_step,
             cache_warmup,
             energy_threshold,

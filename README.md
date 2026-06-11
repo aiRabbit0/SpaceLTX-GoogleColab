@@ -7,7 +7,7 @@ Copias de trabajo locales del Space de Hugging Face [`signsur4739379373/LTX-2.3-
 | Archivo | Descripción |
 |---|---|
 | `app_space.py` | El `app.py` del Space (renombrado aquí). App Gradio autocontenida: al arrancar clona ComfyUI + 16 repos de custom nodes, descarga los modelos (~30 GB) desde HF Hub y ejecuta los workflows directamente con `PromptExecutor` (sin servidor HTTP de ComfyUI). |
-| `LTX_10Eros_Colab.ipynb` | Notebook de Colab que clona el Space y lo ejecuta en GPU gratuita o de pago: mockea el módulo `spaces` (ZeroGPU), valida el entorno para desbloquear las variantes ejecutables (GGUF Q3–Q8 o fp8 original), parchea `app.py` en memoria y permite reemplazar 6 slots de LoRAs por LoRAs propias de CivitAI con sus metadatos. |
+| `LTX_10Eros_Colab.ipynb` | Notebook de Colab que descarga el código de **este repo** (`app_space.py` → `app.py`, `workflow_runexx.json` → `runexx_msr_workflow.json`) y lo ejecuta en GPU gratuita o de pago: mockea el módulo `spaces` (ZeroGPU), valida el entorno para desbloquear las variantes ejecutables (GGUF Q3–Q8 o fp8 original), parchea `app.py` en memoria y permite reemplazar 7 slots de LoRAs por LoRAs propias de CivitAI con sus metadatos. |
 | `workflow_default.json` | Copia local del workflow visual principal de I2V (`10Eros_10SNodes_LikenessGuideHelper_I2V_v3.2.json`, alojado en `TenStrip/LTX2.3-10Eros_Workflows` y fijado por revisión en `app_space.py`). |
 | `workflow_runexx.json` | Copia local del workflow visual multi-referencia (MSR), incluido en el Space como `runexx_msr_workflow.json`. |
 
@@ -38,13 +38,13 @@ La celda detecta la GPU y el disco libre, y desbloquea solo las variantes del ch
 
 #### Ciclo de las LoRAs custom (celdas 5 → 8)
 
-Hay 6 slots intercambiables con nombres genéricos (`slot1`…`slot6`; sus LoRAs originales son Cinematic Hardcut, Synth, Plora Sulfer, OmniNFT RL bf16, Better Motion y Physics V2 respectivamente). El ciclo completo:
+Hay 7 slots intercambiables con nombres genéricos: `slot1`…`slot6` reemplazan una LoRA original (Cinematic Hardcut, Synth, Plora Sulfer, OmniNFT RL bf16, Better Motion y Physics V2 respectivamente) y `slot7` es un slot extra sin LoRA original (vacío queda inactivo; los presets no lo tocan). El ciclo completo:
 
 1. **Celda 5**: pegas la URL de CivitAI (o el ID de versión) en el slot. La celda consulta la API de CivitAI y muestra los **metadatos de la LoRA** (nombre real, versión, base model, trigger words, tamaño), avisa si el base model no parece LTX, descarga el archivo a `/content/custom_loras/` y escribe un manifest (`mapping.json`) con archivo + metadatos por slot.
 2. **Celda 8** (lanzamiento): lee el manifest y por cada slot reemplazado parchea `app.py` en memoria para que (a) la constante `*_LORA_FILENAME` apunte a tu archivo, (b) **no** se descargue la LoRA original de ese slot, y (c) los sliders del slot (vídeo y audio) se **renombren** a `custom: <nombre de tu LoRA>` — así la UI ya no muestra el nombre genérico del slot. Las trigger words se imprimen en consola como recordatorio.
 3. **En la UI**: subes el slider del slot (la mayoría arranca en 0) para activar tu LoRA.
 
-Slot vacío (`""`) = se descarga y usa la LoRA original; no se pierde nada.
+Slot vacío (`""`) = se descarga y usa la LoRA original; no se pierde nada (`slot7` no tiene original: vacío queda inactivo, y no debe subirse su slider sin haberle asignado una LoRA).
 
 ## Características de la app
 
