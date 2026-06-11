@@ -53,6 +53,35 @@ Para usar LoRAs propias de CivitAI:
 - **Modos multi-referencia (MSR)** cableados de extremo a extremo pero ocultos en la UI (WIP).
 - Funciones extra inyectables en el workflow: prompt relay por segmentos, scene chain, condicionamiento K/V, referencia de audio con separación de stems.
 
+## Previsualización local de la UI (sin GPU ni modelos)
+
+`_ui_stub.py` parchea `app_space.py` en memoria y lanza la UI de Gradio en `localhost:7860` sin descargar ningún modelo — útil para explorar el layout, probar cambios de UX y ver cómo quedan los dropdowns de LoRA.
+
+**Instalación (una sola vez):**
+
+```bash
+pip install -r requirements-dev.txt
+# torch CPU (~200 MB) en vez del completo con CUDA:
+pip install torch --index-url https://download.pytorch.org/whl/cpu
+```
+
+**Lanzar la UI:**
+
+```bash
+python _ui_stub.py
+# → http://localhost:7860
+```
+
+**Con recarga automática** al guardar `app_space.py` (requiere `watchdog`):
+
+```bash
+gradio _ui_stub.py
+```
+
+Qué funciona: toda la UI (sliders, dropdowns, presets, pestañas). Si tienes LoRAs custom en `models/loras/ltx23/custom/`, los dropdowns las muestran. El botón Generar espera ~1.5 s y devuelve un video negro (usa `ffmpeg` si está disponible). El enhancer devuelve el prompt tal cual.
+
+Qué **no** funciona: generación real (se necesita GPU + modelos).
+
 ## Desarrollo
 
 El notebook ejecuta el código de este repositorio (rama `main`). Para modificar la app: haz un **fork**, edita `app_space.py`, haz push, y en el notebook apunta la variable `CODE_RAW` (Celda 3) a tu fork antes de re-ejecutar las Celdas 3 y 8.

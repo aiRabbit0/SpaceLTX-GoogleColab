@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+env/
+
+# Archivos generados por _ui_stub.py (temporales del stub local)
+app_colab.py
+_colab_run.py
+
+# Modelos y assets pesados (se descargan en Colab/Space, no se versionen)
+models/
+ComfyUI/
+*.gguf
+*.safetensors
+*.ckpt
+*.pt
+*.bin
+
+# Salidas de generación
+output/
+input/
+
+# Herramientas locales
+.env
+*.log

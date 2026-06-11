@@ -1,0 +1,15 @@
+# Dependencias para desarrollo local — _ui_stub.py (UI sin GPU ni modelos)
+# Instalar: pip install -r requirements-dev.txt
+#
+# NO uses este archivo para correr la app real: en Colab/Space la app
+# bootstrapea sus propias dependencias (ComfyUI, custom nodes, etc.).
+
+gradio>=4.0
+torch           # versión CPU es suficiente: pip install torch --index-url https://download.pytorch.org/whl/cpu
+Pillow
+huggingface_hub
+requests
+
+# Opcional: recarga automática de la UI al guardar app_space.py
+# Uso: gradio _ui_stub.py   (en vez de python _ui_stub.py)
+watchdog
