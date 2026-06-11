@@ -450,6 +450,7 @@ DOWNLOADS = [
         "file": "loras/LTX-2.3-OmniNFT-RL-Lora_bf16.safetensors",
         "dest": MODELS / "loras" / "ltx23" / "LTX-2.3-OmniNFT-RL-Lora_bf16.safetensors",
         "label": "omninft RL bf16 lora",
+        "slot": "slot4",
     },
     {
         "repo": "Lightricks/LTX-2.3",
@@ -486,30 +487,35 @@ DOWNLOADS = [
         "file": "2509189_Synth_01_rank32.safetensors",
         "dest": MODELS / "loras" / "ltx23" / "2509189_Synth_01_rank32.safetensors",
         "label": "synth lora",
+        "slot": "slot2",
     },
     {
         "repo": "signsur4739379373/archive",
         "file": "2598050_plora_sulfer_v1.2-step00008500.safetensors",
         "dest": MODELS / "loras" / "ltx23" / "2598050_plora_sulfer_v1.2-step00008500.safetensors",
         "label": "plora",
+        "slot": "slot3",
     },
     {
         "repo": "signsur4739379373/archive",
         "file": "2344781_Sulphur_LTX 2.3_better_motion.safetensors",
         "dest": MODELS / "loras" / "ltx23" / "2344781_Sulphur_LTX 2.3_better_motion.safetensors",
         "label": "better motion lora (mistic)",
+        "slot": "slot5",
     },
     {
         "repo": "signsur4739379373/archive",
         "file": "2592090_LTX2.3_Physics_V2_000002000.safetensors",
         "dest": MODELS / "loras" / "ltx23" / "2592090_LTX2.3_Physics_V2_000002000.safetensors",
         "label": "physics v2 lora (mistic)",
+        "slot": "slot6",
     },
     {
         "repo": "signsur4739379373/archive",
         "file": "2508281_LTX-2.3_Cinematic hardcut.safetensors",
         "dest": MODELS / "loras" / "ltx23" / "2508281_LTX-2.3_Cinematic hardcut.safetensors",
         "label": "cinematic hardcut lora",
+        "slot": "slot1",
     },
     {
         "repo": "joyfox/LTX-2.3-Transition-LORA",
@@ -558,6 +564,18 @@ TRANSITION_LORA_FILENAME = "ltx23/ltx2.3-transition.safetensors"
 # friendlier display names. Slot 7 has no original lora: it defaults to
 # LORA_NONE and only does anything once a custom file is selected.
 LORA_NONE = "(none)"
+
+# Comma-separated slot keys (e.g. "slot1,slot4") whose ORIGINAL lora should not
+# be downloaded nor offered in the dropdown — set by the Colab notebook's
+# per-lora checkboxes to save disk. The slot itself stays usable with customs.
+_SKIP_SLOT_LORAS = {
+    s.strip() for s in os.environ.get("SKIP_SLOT_LORAS", "").split(",") if s.strip()
+}
+
+
+def _slot_original(slot_key: str, filename: str) -> str | None:
+    """The slot's original lora file, or None when its download is skipped."""
+    return None if slot_key in _SKIP_SLOT_LORAS else filename
 
 
 def _slot_lora_choices(original: str | None) -> list:
@@ -1294,6 +1312,9 @@ def _download_to_dest(repo: str, file_path: str, dest: pathlib.Path, token: str 
 def _ensure_models(progress: gr.Progress | None = None) -> None:
     token = os.environ.get("HF_TOKEN") or os.environ.get("HUGGINGFACE_HUB_TOKEN")
     for index, item in enumerate(DOWNLOADS):
+        if item.get("slot") in _SKIP_SLOT_LORAS:
+            print(f"[models] skip {item['label']} (desmarcada en el notebook)", flush=True)
+            continue
         dest = pathlib.Path(item["dest"])
         dest.parent.mkdir(parents=True, exist_ok=True)
         if dest.exists():
@@ -3508,18 +3529,20 @@ with gr.Blocks(title="10Eros LTX 2.3 image-to-video") as demo:
                     0.0, 1.0, value=0.0, step=0.05,
                     label="synth lora (0 = off)",
                 )
+                _slot2_orig = _slot_original("slot2", SYNTH_LORA_FILENAME)
                 slot2_lora_file = gr.Dropdown(
-                    choices=_slot_lora_choices(SYNTH_LORA_FILENAME),
-                    value=SYNTH_LORA_FILENAME, allow_custom_value=True,
+                    choices=_slot_lora_choices(_slot2_orig),
+                    value=_slot2_orig or LORA_NONE, allow_custom_value=True,
                     label="slot 2 file (synth slider controls this file)",
                 )
                 plora_lora_strength = gr.Slider(
                     0.0, 1.0, value=0.0, step=0.05,
                     label="plora (0 = off)",
                 )
+                _slot3_orig = _slot_original("slot3", PLORA_LORA_FILENAME)
                 slot3_lora_file = gr.Dropdown(
-                    choices=_slot_lora_choices(PLORA_LORA_FILENAME),
-                    value=PLORA_LORA_FILENAME, allow_custom_value=True,
+                    choices=_slot_lora_choices(_slot3_orig),
+                    value=_slot3_orig or LORA_NONE, allow_custom_value=True,
                     label="slot 3 file (plora slider controls this file)",
                 )
                 singularity_lora_strength = gr.Slider(
@@ -3534,36 +3557,40 @@ with gr.Blocks(title="10Eros LTX 2.3 image-to-video") as demo:
                     0.0, 2.0, value=0.0, step=0.05,
                     label="omninft RL bf16 / kijai (0 = off)",
                 )
+                _slot4_orig = _slot_original("slot4", OMNINFT_BF16_LORA_FILENAME)
                 slot4_lora_file = gr.Dropdown(
-                    choices=_slot_lora_choices(OMNINFT_BF16_LORA_FILENAME),
-                    value=OMNINFT_BF16_LORA_FILENAME, allow_custom_value=True,
+                    choices=_slot_lora_choices(_slot4_orig),
+                    value=_slot4_orig or LORA_NONE, allow_custom_value=True,
                     label="slot 4 file (omninft bf16 slider controls this file)",
                 )
                 better_motion_lora_strength = gr.Slider(
                     0.0, 1.0, value=0.0, step=0.05,
                     label="better motion / mistic (0 = off)",
                 )
+                _slot5_orig = _slot_original("slot5", BETTER_MOTION_LORA_FILENAME)
                 slot5_lora_file = gr.Dropdown(
-                    choices=_slot_lora_choices(BETTER_MOTION_LORA_FILENAME),
-                    value=BETTER_MOTION_LORA_FILENAME, allow_custom_value=True,
+                    choices=_slot_lora_choices(_slot5_orig),
+                    value=_slot5_orig or LORA_NONE, allow_custom_value=True,
                     label="slot 5 file (better motion slider controls this file)",
                 )
                 physics_v2_lora_strength = gr.Slider(
                     0.0, 1.0, value=0.0, step=0.05,
                     label="physics v2 / mistic (0 = off)",
                 )
+                _slot6_orig = _slot_original("slot6", PHYSICS_V2_LORA_FILENAME)
                 slot6_lora_file = gr.Dropdown(
-                    choices=_slot_lora_choices(PHYSICS_V2_LORA_FILENAME),
-                    value=PHYSICS_V2_LORA_FILENAME, allow_custom_value=True,
+                    choices=_slot_lora_choices(_slot6_orig),
+                    value=_slot6_orig or LORA_NONE, allow_custom_value=True,
                     label="slot 6 file (physics v2 slider controls this file)",
                 )
                 hardcut_lora_strength = gr.Slider(
                     0.0, 1.0, value=0.0, step=0.05,
                     label="cinematic hardcut (0 = off)",
                 )
+                _slot1_orig = _slot_original("slot1", HARDCUT_LORA_FILENAME)
                 slot1_lora_file = gr.Dropdown(
-                    choices=_slot_lora_choices(HARDCUT_LORA_FILENAME),
-                    value=HARDCUT_LORA_FILENAME, allow_custom_value=True,
+                    choices=_slot_lora_choices(_slot1_orig),
+                    value=_slot1_orig or LORA_NONE, allow_custom_value=True,
                     label="slot 1 file (hardcut slider controls this file)",
                 )
                 transition_lora_strength = gr.Slider(

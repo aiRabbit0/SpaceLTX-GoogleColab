@@ -38,7 +38,7 @@ La celda detecta la GPU y el disco libre, y desbloquea solo las variantes del ch
 
 #### Ciclo de las LoRAs custom (celdas 5 → 8 → UI)
 
-Las LoRAs originales de la app se descargan **siempre**; las custom solo se **añaden** al catálogo y se eligen en runtime. Hay 7 slots: los slots 1-6 corresponden a una LoRA original (Cinematic Hardcut, Synth, Plora Sulfer, OmniNFT RL bf16, Better Motion y Physics V2) y el slot 7 es extra, sin original (por defecto `(none)`). El ciclo completo:
+Las LoRAs originales de los slots se descargan **por defecto** (checkboxes `SLOT1`…`SLOT6` en la Celda 8; desmarcar una la omite vía la env var `SKIP_SLOT_LORAS` y su dropdown arranca en `(none)`); las custom solo se **añaden** al catálogo y se eligen en runtime. Hay 7 slots: los slots 1-6 corresponden a una LoRA original (Cinematic Hardcut, Synth, Plora Sulfer, OmniNFT RL bf16, Better Motion y Physics V2) y el slot 7 es extra, sin original (por defecto `(none)`). El ciclo completo:
 
 1. **Celda 5**: pegas una lista de URLs de CivitAI (o IDs de versión). La celda consulta la API de CivitAI, muestra los **metadatos** (nombre real, versión, base model, trigger words, tamaño), avisa si el base model no parece LTX y descarga a `/content/custom_loras/` (descarga atómica vía `.part` + guard contra respuestas HTML de modelos gated). Escribe `mapping.json` keyed por archivo con los metadatos.
 2. **Celda 8** (lanzamiento): el hook del instalador enlaza los archivos a `models/loras/ltx23/custom/` y copia el manifest como `manifest.json` — nada más; no se parchea ninguna constante ni label por LoRA.
