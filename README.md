@@ -10,9 +10,9 @@ App Gradio de **image-to-video con audio nativo** sobre el checkpoint LTX 2.3 "1
 2. Activa la GPU: `Entorno de ejecución → Cambiar tipo de entorno de ejecución → GPU (T4)`.
 3. Ejecuta las celdas **en orden**. La Celda 5 (LoRAs de CivitAI) es opcional.
 4. La Celda 7 valida la GPU/disco y permite elegir la variante del modelo (en T4 gratuita: GGUF `Q4_K_S`).
-5. La Celda 8 lanza la app: cuando aparezca `Running on public URL: https://...gradio.live`, abre ese enlace.
+5. La Celda 8 lanza la app y **permanece ejecutando** (spinner activo) mientras Gradio esté vivo — igual que Automatic1111. Cuando aparezca `Running on public URL: https://...gradio.live`, abre ese enlace en una pestaña nueva. Para detener: botón ■ de la celda (o `Ctrl+M I`).
 
-La primera ejecución descarga ~45–85 GB de modelos según la variante (10–25 min). `/content` se borra al reiniciar el runtime, así que las descargas no persisten entre sesiones. Es normal que la Celda 8 "termine": Gradio queda corriendo en segundo plano mientras la sesión de Colab siga viva.
+La primera ejecución descarga ~45–85 GB de modelos según la variante (10–25 min). `/content` se borra al reiniciar el runtime, así que las descargas no persisten entre sesiones.
 
 ## Contenido del repositorio
 
