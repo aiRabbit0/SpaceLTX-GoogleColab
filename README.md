@@ -1,34 +1,31 @@
-# LTX 2.3 10Eros — Space de HuggingFace + Google Colab
+# LTX 2.3 10Eros — Image-to-Video con audio nativo (Space de HF + Google Colab)
 
-Copias de trabajo locales del Space de Hugging Face [`signsur4739379373/LTX-2.3-10Eros`](https://huggingface.co/spaces/signsur4739379373/LTX-2.3-10Eros): una app Gradio de **image-to-video con audio nativo** sobre el checkpoint LTX 2.3 "10Eros", con backend ComfyUI ejecutado en proceso, más un port a Google Colab.
+App Gradio de **image-to-video con audio nativo** sobre el checkpoint LTX 2.3 "10Eros", con backend ComfyUI ejecutado en proceso. Es un fork del Space de Hugging Face [`signsur4739379373/LTX-2.3-10Eros`](https://huggingface.co/spaces/signsur4739379373/LTX-2.3-10Eros) con un port a Google Colab que funciona en la **GPU T4 gratuita**.
 
-## Contenido
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/aiRabbit0/SpaceLTX-GoogleColab/blob/main/LTX_10Eros_Colab.ipynb)
+
+## Inicio rápido (Colab)
+
+1. Pulsa el botón **Open in Colab** de arriba (o abre `LTX_10Eros_Colab.ipynb` en Colab).
+2. Activa la GPU: `Entorno de ejecución → Cambiar tipo de entorno de ejecución → GPU (T4)`.
+3. Ejecuta las celdas **en orden**. La Celda 5 (LoRAs de CivitAI) es opcional.
+4. La Celda 7 valida la GPU/disco y permite elegir la variante del modelo (en T4 gratuita: GGUF `Q4_K_S`).
+5. La Celda 8 lanza la app: cuando aparezca `Running on public URL: https://...gradio.live`, abre ese enlace.
+
+La primera ejecución descarga ~45–85 GB de modelos según la variante (10–25 min). `/content` se borra al reiniciar el runtime, así que las descargas no persisten entre sesiones. Es normal que la Celda 8 "termine": Gradio queda corriendo en segundo plano mientras la sesión de Colab siga viva.
+
+## Contenido del repositorio
 
 | Archivo | Descripción |
 |---|---|
-| `app_space.py` | El `app.py` del Space (renombrado aquí). App Gradio autocontenida: al arrancar clona ComfyUI + 16 repos de custom nodes, descarga los modelos (~30 GB) desde HF Hub y ejecuta los workflows directamente con `PromptExecutor` (sin servidor HTTP de ComfyUI). |
-| `LTX_10Eros_Colab.ipynb` | Notebook de Colab que descarga el código de **este repo** (`app_space.py` → `app.py`, `workflow_runexx.json` → `runexx_msr_workflow.json`) y lo ejecuta en GPU gratuita o de pago: mockea el módulo `spaces` (ZeroGPU), valida el entorno para desbloquear las variantes ejecutables (GGUF Q3–Q8 o fp8 original), parchea `app.py` en memoria y permite **añadir LoRAs de CivitAI** que luego se eligen por slot en la UI mediante dropdowns. |
-| `workflow_default.json` | Copia local del workflow visual principal de I2V (`10Eros_10SNodes_LikenessGuideHelper_I2V_v3.2.json`, alojado en `TenStrip/LTX2.3-10Eros_Workflows` y fijado por revisión en `app_space.py`). |
-| `workflow_runexx.json` | Copia local del workflow visual multi-referencia (MSR), incluido en el Space como `runexx_msr_workflow.json`. |
+| `app_space.py` | La app (en el Space se llama `app.py`). Gradio autocontenida: al arrancar clona ComfyUI + 16 repos de custom nodes, descarga los modelos desde HF Hub y ejecuta los workflows directamente con `PromptExecutor` (sin servidor HTTP de ComfyUI). |
+| `LTX_10Eros_Colab.ipynb` | Notebook de Colab. Descarga el código de **este repositorio** (`app_space.py` → `app.py`, `workflow_runexx.json` → `runexx_msr_workflow.json`), mockea el módulo `spaces` (ZeroGPU), valida el entorno, parchea `app.py` en memoria (checkpoint GGUF, enhancer opcional...) y lanza la interfaz con enlace público. |
+| `workflow_default.json` | Copia de referencia del workflow visual principal de I2V (alojado en `TenStrip/LTX2.3-10Eros_Workflows`, fijado por revisión en `app_space.py`). |
+| `workflow_runexx.json` | Copia del workflow visual multi-referencia (MSR), que el notebook instala como `runexx_msr_workflow.json`. |
 
-## Uso
+## Selector de modelo según el entorno (Celda 7)
 
-### En el Space (ZeroGPU)
-
-`app_space.py` se sube al Space como `app.py`. La duración de GPU se estima en `get_gpu_duration` (fórmula ajustada para que una generación de 4 s quepa en los 120 s/día gratuitos de ZeroGPU); se puede forzar un presupuesto manual desde la UI.
-
-### En Colab
-
-1. Abre `LTX_10Eros_Colab.ipynb` en Colab con runtime **GPU (T4)**.
-2. Ejecuta las celdas en orden (la de LoRAs de CivitAI es opcional).
-3. La celda 7 **valida el entorno** (VRAM/disco) y te deja elegir el modelo entre las variantes desbloqueadas.
-4. La celda 8 aplica los parches y abre la interfaz (`gradio.live`).
-
-La primera ejecución descarga ~45–85 GB de modelos según la variante. `/content` se borra al reiniciar el runtime.
-
-#### Selector de modelo según el entorno (celda 7)
-
-La celda detecta la GPU y el disco libre, y desbloquea solo las variantes del checkpoint que caben en ese runtime (las bloqueadas se muestran con 🔒 y el motivo). La selección se guarda en `LTX_MODEL_CHOICE` y la celda de lanzamiento la usa automáticamente; si se omite la celda, vale el parámetro `GGUF_QUANT` de siempre.
+La celda detecta la GPU y el disco libre y desbloquea solo las variantes del checkpoint que caben en la VRAM (el disco solo avisa con ⚠️). La selección se guarda en `LTX_MODEL_CHOICE` y la Celda 8 la usa automáticamente; si se omite la celda, vale su parámetro `GGUF_QUANT`.
 
 | Entorno | Variantes desbloqueadas (aprox.) |
 |---|---|
@@ -36,32 +33,38 @@ La celda detecta la GPU y el disco libre, y desbloquea solo las variantes del ch
 | Colab Pro (L4, ~22.5 GB VRAM) | GGUF hasta `Q6_K` |
 | A100 (40 GB VRAM) | Todo, incluido `FP8_ORIGINAL` (checkpoint sin cuantizar, 29.2 GB — se omiten los parches GGUF) |
 
-#### Ciclo de las LoRAs custom (celdas 5 → 8 → UI)
+## LoRAs: originales y personalizadas
 
-Las LoRAs originales de los slots se descargan **por defecto** (checkboxes `SLOT1`…`SLOT6` en la Celda 8; desmarcar una la omite vía la env var `SKIP_SLOT_LORAS` y su dropdown arranca en `(none)`); las custom solo se **añaden** al catálogo y se eligen en runtime. Hay 7 slots: los slots 1-6 corresponden a una LoRA original (Cinematic Hardcut, Synth, Plora Sulfer, OmniNFT RL bf16, Better Motion y Physics V2) y el slot 7 es extra, sin original (por defecto `(none)`). El ciclo completo:
+La app trae ~14 LoRAs opcionales con sliders de fuerza (video y audio por separado). Siete de ellas son **slots intercambiables**:
 
-1. **Celda 5**: pegas una lista de URLs de CivitAI (o IDs de versión). La celda consulta la API de CivitAI, muestra los **metadatos** (nombre real, versión, base model, trigger words, tamaño), avisa si el base model no parece LTX y descarga a `/content/custom_loras/` (descarga atómica vía `.part` + guard contra respuestas HTML de modelos gated). Escribe `mapping.json` keyed por archivo con los metadatos.
-2. **Celda 8** (lanzamiento): el hook del instalador enlaza los archivos a `models/loras/ltx23/custom/` y copia el manifest como `manifest.json` — nada más; no se parchea ninguna constante ni label por LoRA.
-3. **En la UI**: cada slot tiene un **dropdown** (`_slot_lora_choices` en `app_space.py`) con su LoRA original + todas las custom instaladas (mostradas con su nombre de CivitAI) + `(none)`. El slider del slot controla el archivo elegido; los presets ajustan fuerzas pero no tocan el dropdown.
+- **Slots 1-6** tienen una LoRA original (Cinematic Hardcut, Synth, Plora Sulfer, OmniNFT RL bf16, Better Motion, Physics V2). Se descargan según los **checkboxes** de la Celda 8 (por defecto, todas; desmarcar una ahorra su tamaño en disco).
+- **Slot 7** es extra, sin LoRA original.
+
+Para usar LoRAs propias de CivitAI:
+
+1. **Celda 5**: pega las URLs (o IDs de versión) en el campo `CUSTOM_LORAS_LINKS` (varias separadas por comas) o en la lista `CUSTOM_LORAS`. La celda muestra los metadatos (nombre, base model, trigger words, tamaño), avisa si el base model no parece LTX 2.3, y descarga con verificación (descarga atómica + detección de modelos *gated*). Si da 401, configura `CIVITAI_TOKEN` en la Celda 2.
+2. **En la UI**: cada slot tiene un **dropdown** con su LoRA original + todas las custom instaladas + `(none)`. Elige el archivo, sube el slider del slot y añade las trigger words al prompt. Los presets ajustan fuerzas pero nunca cambian el archivo elegido.
 
 ## Características de la app
 
 - **I2V con audio nativo**: vídeo y audio se generan conjuntamente (LTX 2.3 AV).
-- **Enhance prompt**: un servidor llama.cpp con un modelo de visión expande un concepto corto en un prompt detallado afinado para LTX, a partir de la imagen de referencia.
-- **Presets** que ajustan modo, sigmas y las intensidades de ~12 LoRAs opcionales (vídeo + audio por separado).
+- **Enhance prompt**: un servidor llama.cpp con un modelo de visión expande un concepto corto en un prompt detallado afinado para LTX. En Colab viene **desactivado por defecto** (`DISABLE_ENHANCER`): su modelo (~13 GB) no cabe en el disco del Colab gratuito.
+- **Presets** que ajustan modo, sigmas y las intensidades de las LoRAs opcionales.
 - **Modos multi-referencia (MSR)** cableados de extremo a extremo pero ocultos en la UI (WIP).
 - Funciones extra inyectables en el workflow: prompt relay por segmentos, scene chain, condicionamiento K/V, referencia de audio con separación de stems.
 
 ## Desarrollo
 
-No hay tests ni build: el código solo corre realmente en el Space o en Colab. Verificación rápida:
+El notebook ejecuta el código de este repositorio (rama `main`). Para modificar la app: haz un **fork**, edita `app_space.py`, haz push, y en el notebook apunta la variable `CODE_RAW` (Celda 3) a tu fork antes de re-ejecutar las Celdas 3 y 8.
+
+No hay tests ni build: el código solo corre realmente en el Space (ZeroGPU) o en Colab. Verificación rápida:
 
 ```bash
 python -m py_compile app_space.py
 python -X utf8 -m json.tool workflow_runexx.json > /dev/null
 ```
 
-⚠️ **Invariante principal**: el notebook parchea `app.py` por **reemplazo exacto de strings**. Cualquier cambio en `app_space.py` que toque un string objetivo de un `patch(...)` del notebook debe actualizarse también en el notebook, o el parche fallará en silencio (avisa con `⚠️ parche ... NO aplicado`). Más invariantes y arquitectura en [`CLAUDE.md`](CLAUDE.md).
+⚠️ **Invariante principal**: el notebook parchea `app.py` por **reemplazo exacto de strings**. Cualquier cambio en `app_space.py` que toque un string objetivo de un `patch(...)` de la Celda 8 debe actualizarse también en el notebook, o el parche fallará en silencio (avisa con `⚠️ parche ... NO aplicado`). Más invariantes y arquitectura en [`CLAUDE.md`](CLAUDE.md).
 
 ---
-*Eres el único responsable de todo el contenido que generes.*
+*Cada usuario es el único responsable de todo el contenido que genere.*
