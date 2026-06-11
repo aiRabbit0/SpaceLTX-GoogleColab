@@ -937,6 +937,11 @@ def _ensure_enhancer() -> None:
     global _enhancer_ready
     if _enhancer_ready:
         return
+    # Kill switch for disk-constrained runtimes (e.g. free Colab, ~78 GB total):
+    # skips the llama-server binary/build AND the sulphur weights (~13 GB).
+    if os.environ.get("DISABLE_ENHANCER", "").strip().lower() in ("1", "true", "yes"):
+        print("[enhancer] disabled via DISABLE_ENHANCER env var", flush=True)
+        return
     try:
         _ensure_llama_server()
         SULPHUR_MODEL_DIR.mkdir(parents=True, exist_ok=True)
