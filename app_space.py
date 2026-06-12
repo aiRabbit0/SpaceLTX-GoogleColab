@@ -522,6 +522,7 @@ DOWNLOADS = [
         "file": "ltx2.3-transition.safetensors",
         "dest": MODELS / "loras" / "ltx23" / "ltx2.3-transition.safetensors",
         "label": "transition lora",
+        "slot": "slot_transition",
     },
     {
         "repo": "LiconStudio/LTX-2.3-Multiple-Subject-Reference",
@@ -2037,6 +2038,7 @@ def _inject_params(
             "lora_better_motion": slot5_lora_file,
             "lora_physics_v2": slot6_lora_file,
             "lora_slot7": slot7_lora_file,
+            "lora_transition": LORA_NONE if "slot_transition" in _SKIP_SLOT_LORAS else TRANSITION_LORA_FILENAME,
             "lora_custom1": custom1_lora_file,
             "lora_custom2": custom2_lora_file,
             "lora_custom3": custom3_lora_file,
@@ -3671,10 +3673,12 @@ with gr.Blocks(title="10Eros LTX 2.3 image-to-video") as demo:
                         label="cinematic hardcut (0 = off)",
                     )
                 slot1_lora_file = gr.State(value=_slot1_orig or LORA_NONE)
-                transition_lora_strength = gr.Slider(
-                    0.0, 1.0, value=0.0, step=0.05,
-                    label="transition lora (0 = off, default 0.15)",
-                )
+                _slot_trans_orig = _slot_original("slot_transition", TRANSITION_LORA_FILENAME)
+                with gr.Row(visible=bool(_slot_trans_orig)):
+                    transition_lora_strength = gr.Slider(
+                        0.0, 1.0, value=0.0, step=0.05,
+                        label="transition lora (0 = off, default 0.15)",
+                    )
                 # Slot 7 oculto — mantenido solo para estabilidad de la firma
                 with gr.Row(visible=False):
                     slot7_lora_strength = gr.Slider(
@@ -3873,10 +3877,11 @@ with gr.Blocks(title="10Eros LTX 2.3 image-to-video") as demo:
                             0.0, 1.0, value=0.0, step=0.05,
                             label="cinematic hardcut (audio)",
                         )
-                    transition_audio_strength = gr.Slider(
-                        0.0, 1.0, value=0.0, step=0.05,
-                        label="transition lora (audio)",
-                    )
+                    with gr.Row(visible=bool(_slot_trans_orig)):
+                        transition_audio_strength = gr.Slider(
+                            0.0, 1.0, value=0.0, step=0.05,
+                            label="transition lora (audio)",
+                        )
                     with gr.Row(visible=False):
                         slot7_audio_strength = gr.Slider(
                             0.0, 1.0, value=0.0, step=0.05,
